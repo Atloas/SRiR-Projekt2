@@ -141,13 +141,13 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		LOG("Applying acceleration. Before:");
-		logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
-		logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
-		logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
-		logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
-		logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
-		logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
+		// LOG("Applying acceleration. Before:");
+		// logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
+		// logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
+		// logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
+		// logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
+		// logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
+		// logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
@@ -161,13 +161,13 @@ int main(int argc, char *argv[])
 			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
 			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
 		}
-		LOG("Applying acceleration. After:");
-		logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
-		logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
-		logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
-		logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
-		logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
-		logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
+		// LOG("Applying acceleration. After:");
+		// logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
+		// logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
+		// logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
+		// logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
+		// logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
+		// logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
 		
 		upcxx::barrier();
 
@@ -218,7 +218,6 @@ int main(int argc, char *argv[])
 int getObjectCount(std::string filename)
 {
 	return 2;
-	/*
 	//Zliczenie ilosci wpisow w pliku danych
 	int count = 0;
 	std::string line;
@@ -230,7 +229,6 @@ int getObjectCount(std::string filename)
 		datafile.close();
 	}
 	return (count - 1);
-	*/
 }
 
 void splitData(int myId, int numProcs, int totalObjectCount, int* ownObjectStarts, int* ownObjectEnds)
@@ -255,23 +253,22 @@ void splitData(int myId, int numProcs, int totalObjectCount, int* ownObjectStart
 
 void readData(std::string filename, upcxx::global_ptr<double> dataVector)
 {
-    upcxx::rput(0.0, dataVector);
-    upcxx::rput(0.0, dataVector+1);
-    upcxx::rput(0.0, dataVector+2);
-    upcxx::rput(0.0, dataVector+3);
-    upcxx::rput(0.0, dataVector+4);
-    upcxx::rput(0.0, dataVector+5);
-    upcxx::rput(5.972e24, dataVector+6);
+    // upcxx::rput(0.0, dataVector);
+    // upcxx::rput(0.0, dataVector+1);
+    // upcxx::rput(0.0, dataVector+2);
+    // upcxx::rput(0.0, dataVector+3);
+    // upcxx::rput(0.0, dataVector+4);
+    // upcxx::rput(0.0, dataVector+5);
+    // upcxx::rput(5.972e24, dataVector+6);
 
-    upcxx::rput(3.844e8, dataVector+7);
-    upcxx::rput(0.0, dataVector+8);
-    upcxx::rput(0.0, dataVector+9);
-    upcxx::rput(1.022e3, dataVector+10);
-    upcxx::rput(1.0, dataVector+11);
-    upcxx::rput(1.0, dataVector+12);
-    upcxx::rput(7.347e22, dataVector+13);
+    // upcxx::rput(3.844e8, dataVector+7);
+    // upcxx::rput(0.0, dataVector+8);
+    // upcxx::rput(0.0, dataVector+9);
+    // upcxx::rput(1.022e3, dataVector+10);
+    // upcxx::rput(1.0, dataVector+11);
+    // upcxx::rput(1.0, dataVector+12);
+    // upcxx::rput(7.347e22, dataVector+13);
 
-    /*
     //Wczytanie danych cial niebieskich z pliku
 	std::string line;
 	std::string delimiter = ";";
@@ -286,34 +283,33 @@ void readData(std::string filename, upcxx::global_ptr<double> dataVector)
 					std::string token = line.substr(0, pos);
 					switch (datapos) {
 					case 1:
-						xPosVector[count*7] = atof(token.c_str());
+						dataVector[count*7] = atof(token.c_str());
 						break;
 					case 2:
-						yPosVector[count*7 + 1] = atof(token.c_str());
+						dataVector[count*7 + 1] = atof(token.c_str());
 						break;
 					case 3:
-						zPosVector[count*7 + 2] = atof(token.c_str());
+						dataVector[count*7 + 2] = atof(token.c_str());
 						break;
 					case 4:
-						xVelVector[count*7 + 3] = atof(token.c_str());
+						dataVector[count*7 + 3] = atof(token.c_str());
 						break;
 					case 5:
-						yVelVector[count*7 + 4] = atof(token.c_str());
+						dataVector[count*7 + 4] = atof(token.c_str());
 						break;
 					case 6:
-						zVelVector[count*7 + 5] = atof(token.c_str());
+						dataVector[count*7 + 5] = atof(token.c_str());
 						break;
 					}
 					line.erase(0, pos + delimiter.length());
 					datapos++;
 				}
-				massVector[count*7 + 6] = atof(line.c_str());
+				dataVector[count*7 + 6] = atof(line.c_str());
 			}
 			++count;
 		}
 		datafile.close();
 	}
-    */
 }
 
 void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount)
