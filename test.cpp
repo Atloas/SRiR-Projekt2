@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	if (myId == 0)
 	{
 		totalObjectCount = getObjectCount(filename);
-		totalObjectCountPtr = upcxx::new_();
+		totalObjectCountPtr = upcxx::new_<int>();
 		upcxx::rput(totalObjectCount, totalObjectCountPtr);
 	}
 	totalObjectCountPtr = upcxx::broadcast(totalObjectCountPtr, 0).wait();
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 	//Petla symulacji
 	for (double t = 0; t < Tmax; t += dt, writeCounter++)
 	{
-		for(i = 0; i < totalObjectCount; i++)
+		for(int i = 0; i < totalObjectCount; i++)
 		{
 			if(t < 1.0 || (i < ownObjectStart && i >= ownObjectEnd))
 			{
@@ -144,9 +144,9 @@ int main(int argc, char *argv[])
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
-			xVelVector[i - ownObjectStart] += xAccelerationVector[i - ownObjectStart] * dt;
-			yVelVector[i - ownObjectStart] += yAccelerationVector[i - ownObjectStart] * dt;
-			zVelVector[i - ownObjectStart] += zAccelerationVector[i - ownObjectStart] * dt;
+			xVelocityVector[i - ownObjectStart] += xAccelerationVector[i - ownObjectStart] * dt;
+			yVelocityVector[i - ownObjectStart] += yAccelerationVector[i - ownObjectStart] * dt;
+			zVelocityVector[i - ownObjectStart] += zAccelerationVector[i - ownObjectStart] * dt;
 			xPositionVector[i] += xVelVector[i] * dt;
 			yPositionVector[i] += yVelVector[i] * dt;
 			zPositionVector[i] += zVelVector[i] * dt;
