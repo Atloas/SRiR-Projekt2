@@ -73,6 +73,9 @@ int main(int argc, char *argv[])
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
     ownDataSize = ownObjectCount * propertyCount;
 
+	LOGV("ownObjectStart", ownObjectStart);
+	LOGV("ownObjectEnd", ownObjectEnd);
+
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
 	double* zPositionVector = new double[totalObjectCount];	//m
@@ -187,6 +190,8 @@ int main(int argc, char *argv[])
 
 		upcxx::barrier();
 	}
+
+	LOG("Loop finished");
 
 	if(myId == 0)
 		fclose(resultFile);
