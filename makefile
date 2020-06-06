@@ -6,7 +6,7 @@ nbody: nbody.cpp
 all: run
 
 run: nbody
-	upcxx-run -n $(NN) \$(upcxx-nodes nodes) nbody
+	upcxx-run -n $(NN) $$(upcxx-nodes nodes) nbody
 
 .PHONY: all run
 .PHONY: clean
