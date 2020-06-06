@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
 		upcxx::barrier();
 		if(myId == 0)
-			std::cout << "loop, t = " << t << std::endl;
+			std::cout << "loop, writeCounter = " << writeCounter << std::endl;
 	}
 
 	fclose(resultFile);
