@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 
 int getObjectCount(std::string filename)
 {
-	return 2;
+	// return 2;
 	//Zliczenie ilosci wpisow w pliku danych
 	int count = 0;
 	std::string line;
