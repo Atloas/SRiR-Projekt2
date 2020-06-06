@@ -283,28 +283,28 @@ void readData(std::string filename, upcxx::global_ptr<double> dataVector)
 					std::string token = line.substr(0, pos);
 					switch (datapos) {
 					case 1:
-						upcxx::rput(atof(token.c_str(), dataVector + count*7).wait();
+						upcxx::rput(atof(token.c_str()), dataVector + count*7).wait();
 						break;
 					case 2:
-						upcxx::rput(atof(token.c_str(), dataVector + count*7 + 1).wait();
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 1).wait();
 						break;
 					case 3:
-						upcxx::rput(atof(token.c_str(), dataVector + count*7 + 2).wait();
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 2).wait();
 						break;
 					case 4:
-						upcxx::rput(atof(token.c_str(), dataVector + count*7 + 3).wait();
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 3).wait();
 						break;
 					case 5:
-						upcxx::rput(atof(token.c_str(), dataVector + count*7 + 4).wait();
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 4).wait();
 						break;
 					case 6:
-						upcxx::rput(atof(token.c_str(), dataVector + count*7 + 5).wait();
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 5).wait();
 						break;
 					}
 					line.erase(0, pos + delimiter.length());
 					datapos++;
 				}
-				upcxx::rput(atof(token.c_str(), dataVector + count*7 + 6).wait();
+				upcxx::rput(atof(token.c_str()), dataVector + count*7 + 6).wait();
 			}
 			++count;
 		}
