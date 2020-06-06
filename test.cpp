@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     for(int i = 0; i < totalObjectCount; i++)
     {
         massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6).wait();
-        if(i >= ownObjectStart && i < ownObjectEnd)
+        if(i >= ownObjectStart && i <= ownObjectEnd)
         {
             xVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
             yVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 4).wait();
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	{
 		for(int i = 0; i < totalObjectCount; i++)
 		{
-			if(t < 1.0 || (i < ownObjectStart && i >= ownObjectEnd))
+			if(t < 1.0 || (i < ownObjectStart && i > ownObjectEnd))
 			{
 				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
 				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
@@ -156,6 +156,8 @@ int main(int argc, char *argv[])
 		}
 
 		upcxx::barrier();
+		if(myId == 0)
+			std::cout << "loop, t = " << t << std::endl;
 	}
 
 	fclose(resultFile);
