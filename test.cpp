@@ -76,24 +76,21 @@ int main(int argc, char *argv[])
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
 	double* zPositionVector = new double[totalObjectCount];	//m
-    double* xVelocityVector = new double[ownObjectCount];   //m/s
-    double* yVelocityVector = new double[ownObjectCount];	//m/s
-	double* zVelocityVector = new double[ownObjectCount];	//m/s
-    double* xAccelerationVector = new double[ownObjectCount];  //m/s2
-	double* yAccelerationVector = new double[ownObjectCount];	//m/s2
-	double* zAccelerationVector = new double[ownObjectCount];	//m/s2
+    double* xVelocityVector = new double[totalObjectCount];   //m/s
+    double* yVelocityVector = new double[totalObjectCount];	//m/s
+	double* zVelocityVector = new double[totalObjectCount];	//m/s
+    double* xAccelerationVector = new double[totalObjectCount];  //m/s2
+	double* yAccelerationVector = new double[totalObjectCount];	//m/s2
+	double* zAccelerationVector = new double[totalObjectCount];	//m/s2
     double* massVector = new double[totalObjectCount];
     for(int i = 0; i < totalObjectCount; i++)
     {
 		xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
 		yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
 		zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
-        if(i >= ownObjectStart && i <= ownObjectEnd)
-        {
-            xVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
-            yVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 4).wait();
-            zVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 5).wait();
-        }
+		xVelocityVector[i] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
+		yVelocityVector[i] = upcxx::rget(dataVector + i*propertyCount + 4).wait();
+		zVelocityVector[i] = upcxx::rget(dataVector + i*propertyCount + 5).wait();
 		massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6).wait();
     }
 
@@ -120,9 +117,9 @@ int main(int argc, char *argv[])
 		//Iteracja po cialach wlasnych danego procesu
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
-			xAccelerationVector[i - ownObjectStart] = 0;
-			yAccelerationVector[i - ownObjectStart] = 0;
-			zAccelerationVector[i - ownObjectStart] = 0;
+			xAccelerationVector[i] = 0;
+			yAccelerationVector[i] = 0;
+			zAccelerationVector[i] = 0;
 
 			//Iteracja po wszystkich cialach symulacji
 			for (int j = 0; j < totalObjectCount; j++)
@@ -138,9 +135,9 @@ int main(int argc, char *argv[])
 				magnitude = G*massVector[j] / r2;
 				angleH = atan2(yPosDiff, sqrt(pow(zPosDiff, 2) + pow(xPosDiff, 2)));
 				angleV = atan2(zPosDiff, xPosDiff);
-				xAccelerationVector[i - ownObjectStart] += -magnitude*cos(angleH)*cos(angleV);
-				yAccelerationVector[i - ownObjectStart] += -magnitude*sin(angleH);
-				zAccelerationVector[i - ownObjectStart] += -magnitude*cos(angleH)*sin(angleV);
+				xAccelerationVector[i] += -magnitude*cos(angleH)*cos(angleV);
+				yAccelerationVector[i] += -magnitude*sin(angleH);
+				zAccelerationVector[i] += -magnitude*cos(angleH)*sin(angleV);
 			}
 		}
 
@@ -154,9 +151,9 @@ int main(int argc, char *argv[])
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
-			xVelocityVector[i - ownObjectStart] += xAccelerationVector[i - ownObjectStart] * dt;
-			yVelocityVector[i - ownObjectStart] += yAccelerationVector[i - ownObjectStart] * dt;
-			zVelocityVector[i - ownObjectStart] += zAccelerationVector[i - ownObjectStart] * dt;
+			xVelocityVector[i] += xAccelerationVector[i] * dt;
+			yVelocityVector[i] += yAccelerationVector[i] * dt;
+			zVelocityVector[i] += zAccelerationVector[i] * dt;
 			xPositionVector[i] += xVelocityVector[i] * dt;
 			yPositionVector[i] += yVelocityVector[i] * dt;
 			zPositionVector[i] += zVelocityVector[i] * dt;
