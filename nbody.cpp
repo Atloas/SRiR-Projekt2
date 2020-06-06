@@ -1,4 +1,5 @@
-#include "mpi.h" 
+// #include "mpi.h" 
+#include <upcxx/upcxx.hpp>
 #include <stdio.h> 
 
 #include <math.h>
@@ -21,12 +22,17 @@ int main(int argc, char *argv[])
 	FILE* resultFile;
 	int totalDataSize = 1000, ownDataSize;
 	double dt = 60;			//[s]
-	double Tmax = 2.6e6;	//Miesiac
+	double Tmax = 120;//2.6e6;	//Miesiac
 	double G = 6.674e-11;
 
-	MPI_Init(&argc, &argv);
-	MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-	MPI_Comm_rank(MPI_COMM_WORLD, &myId);
+	// MPI_Init(&argc, &argv);
+	// MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+	// MPI_Comm_rank(MPI_COMM_WORLD, &myId);
+
+	upcxx::init();
+	myId = upcxx::rank_me();
+	numProcs = upcxx::rank_n();
+	upcxx::global_ptr<int> totalDataSizePtr = nullptr;
 
 	int* partialDataStarts = new int[numProcs];
 	int* partialDataEnds = new int[numProcs];
@@ -35,9 +41,12 @@ int main(int argc, char *argv[])
 	if (myId == 0)
 	{
 		totalDataSize = getDataSize(filename);
+		totalDataSizePtr = upcxx::new_(totalDataSize);
 	}
+	totalDataSizePtr = upcxx::broadcast(totalDataSizePtr, 0).wait();
+	totalDataSize = upcxx::rget(totalDataSizePtr).wait();
 
-	MPI_Bcast(&totalDataSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(&totalDataSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 	double* xPosVector = new double[totalDataSize];  //[m]
 	double* yPosVector = new double[totalDataSize];  //[m]
@@ -52,14 +61,14 @@ int main(int argc, char *argv[])
 		readData(filename, xPosVector, yPosVector, zPosVector, xVelVector, yVelVector, zVelVector, massVector);
 	}
 
-	//Przes�anie danych pocz�tkowych oraz ich podzia� przez indeksy.
+	//Przeslanie danych poczatkowych oraz ich podzial przez indeksy.
 	broadcastInitialData(totalDataSize, xPosVector, yPosVector, zPosVector, xVelVector, yVelVector, zVelVector, massVector);
 	splitData(myId, numProcs, totalDataSize, partialDataStarts, partialDataEnds);
 	ownDataStart = partialDataStarts[myId];
 	ownDataEnd = partialDataEnds[myId];
 	ownDataSize = ownDataEnd - ownDataStart + 1;
 
-	//Wektory przyspieszenia w�asnych dla danego procesu cia�. Nie przechowuj� cia� przynale�nych do innych proces�w.
+	//Wektory przyspieszenia wlasnych dla danego procesu cial. Nie przechowuja cial przynaleznych do innych procesow.
 	double* xAccelerationVector = new double[ownDataSize];  //m/s2
 	double* yAccelerationVector = new double[ownDataSize];	//m/s2
 	double* zAccelerationVector = new double[ownDataSize];	//m/s2
@@ -76,23 +85,23 @@ int main(int argc, char *argv[])
 	fprintf(resultFile, "id;x;y;z\n");
 
 	int writeCounter = 0;
-	//P�tla symulacji
+	//Petla symulacji
 	for (double t = 0; t < Tmax; t += dt, writeCounter++)
 	{
-		//Iteracja po cia�ach w�asnych danego procesu
+		//Iteracja po cialach wlasnych danego procesu
 		for (int i = ownDataStart; i < ownDataEnd + 1; i++)
 		{
 			xAccelerationVector[i - ownDataStart] = 0;
 			yAccelerationVector[i - ownDataStart] = 0;
 			zAccelerationVector[i - ownDataStart] = 0;
 
-			//Iteracja po wszystkich cia�ach symulacji
+			//Iteracja po wszystkich cialach symulacji
 			for (int j = 0; j < totalDataSize; j++)
 			{
 				if (i == j)
 					continue;
 
-				//Obliczenie przyspieszenia jakie cia�o j wywiera na cia�o w�asne i
+				//Obliczenie przyspieszenia jakie cialo j wywiera na cialo wlasne i
 				xPosDiff = xPosVector[i] - xPosVector[j];
 				yPosDiff = yPosVector[i] - yPosVector[j];
 				zPosDiff = zPosVector[i] - zPosVector[j];
@@ -106,7 +115,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		//Zastosowanie obliczonych zmian pr�dko�ci i po�o�enia
+		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownDataStart; i < ownDataEnd + 1; i++)
 		{
 			xVelVector[i] += xAccelerationVector[i - ownDataStart] * dt;
@@ -118,7 +127,8 @@ int main(int argc, char *argv[])
 		}
 
 		broadcastData(myId, numProcs, xPosVector, yPosVector, zPosVector, partialDataStarts, partialDataEnds);
-		
+		upcxx::barrier();
+
 		//Co 10 minut zapisanie danych do pliku
 		if (myId == 0 && writeCounter % 10 == 0) {
 			saveData(resultFile, xPosVector, yPosVector, zPosVector, totalDataSize);
@@ -142,14 +152,17 @@ int main(int argc, char *argv[])
 	delete[] yAccelerationVector;
 	delete[] zAccelerationVector;
 
-	MPI_Finalize();
+	// MPI_Finalize();
+
+	upcxx::delete_(totalDataSizePtr);
+	upcxx::finalize();
 
 	return 0;
 }
 
 int getDataSize(std::string filename)
 {
-	//Zliczenie ilo�ci wpis�w w pliku danych
+	//Zliczenie ilosci wpisow w pliku danych
 	int count = 0;
 	std::string line;
 	std::ifstream datafile("nbodydata.txt");
@@ -164,7 +177,7 @@ int getDataSize(std::string filename)
 
 void splitData(int myId, int numProcs, int totalDataSize, int* partialDataStarts, int* partialDataEnds)
 {
-	//Podzia� danych mi�dzy procesy poprzez nadanie im pewnych zakres�w indeks�w.
+	//Podzial danych miedzy procesy poprzez nadanie im pewnych zakresow indeksow.
 	int baseCount = totalDataSize / numProcs;
 	int leftover = totalDataSize%numProcs;
 
@@ -184,7 +197,7 @@ void splitData(int myId, int numProcs, int totalDataSize, int* partialDataStarts
 
 void readData(std::string filename, double* xPosVector, double* yPosVector, double* zPosVector, double* xVelVector, double* yVelVector, double* zVelVector, double* massVector)
 {
-	//Wczytanie danych cia� niebieskich z pliku
+	//Wczytanie danych cial niebieskich z pliku
 	std::string line;
 	std::string delimiter = ";";
 	int count = -1;
@@ -229,25 +242,25 @@ void readData(std::string filename, double* xPosVector, double* yPosVector, doub
 
 void broadcastInitialData(int totalDataSize, double* xPosVector, double* yPosVector, double* zPosVector, double* xVelVector, double* yVelVector, double* zVelVector, double* massVector)
 {
-	MPI_Bcast(xPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(yPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(zPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(xVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(yVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(zVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	MPI_Bcast(massVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(xPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(yPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(zPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(xVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(yVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(zVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	// MPI_Bcast(massVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 }
 
 void broadcastData(int myId, int numProcs, double* xPosVector, double* yPosVector, double* zPosVector, int* partialDataStarts, int* partialDataEnds)
 {
-	int partialDataSize;
-	for (int i = 0; i < numProcs; i++)
-	{
-		partialDataSize = partialDataEnds[i] - partialDataStarts[i] + 1;
-		MPI_Bcast(xPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
-		MPI_Bcast(yPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
-		MPI_Bcast(zPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
-	}
+	// int partialDataSize;
+	// for (int i = 0; i < numProcs; i++)
+	// {
+	// 	partialDataSize = partialDataEnds[i] - partialDataStarts[i] + 1;
+	// 	MPI_Bcast(xPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
+	// 	MPI_Bcast(yPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
+	// 	MPI_Bcast(zPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
+	// }
 }
 
 void saveData(FILE* resultFile, double* xPosVector, double* yPosVector, double* zPosVector, int totalDataSize)
