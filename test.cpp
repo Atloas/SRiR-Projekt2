@@ -8,23 +8,10 @@
 #include <iostream>
 #include <fstream>
 
-#define LOG(message) std::cout << myId << ": " << message << std::endl;
-#define LOGV(name, value) std::cout << myId << ": " << name << " = " << value << std::endl;
-
 int getObjectCount(std::string filename);
 void readData(std::string filename, upcxx::global_ptr<double> dataVector);
 void splitData(int myId, int numProcs, int totalDataSize, int* ownObjectStarts, int* ownObjectEnds);
 void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount);
-
-void logArray(int myId, std::string name, double* array, int iStart, int iEnd)
-{
-	std::cout << myId << ": " << name << ": ";
-	for(int i = iStart; i < iEnd; i++)
-	{
-		std::cout << array[i] << ", ";
-	}
-	std::cout << std::endl;
-}
 
 int main(int argc, char *argv[])
 {
@@ -72,9 +59,6 @@ int main(int argc, char *argv[])
 	ownObjectEnd = ownObjectEnds[myId];
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
     ownDataSize = ownObjectCount * propertyCount;
-
-	LOGV("ownObjectStart", ownObjectStart);
-	LOGV("ownObjectEnd", ownObjectEnd);
 
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
@@ -144,13 +128,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		// LOG("Applying acceleration. Before:");
-		// logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
-		// logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
-		// logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
-		// logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
-		// logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
-		// logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
@@ -164,13 +141,6 @@ int main(int argc, char *argv[])
 			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
 			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
 		}
-		// LOG("Applying acceleration. After:");
-		// logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
-		// logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
-		// logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
-		// logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
-		// logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
-		// logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
 		
 		upcxx::barrier();
 
