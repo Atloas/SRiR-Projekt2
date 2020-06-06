@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     dataVector = upcxx::broadcast(dataVector, 0).wait();
 
 	//Przeslanie danych poczatkowych oraz ich podzial przez indeksy.
-	splitData(myId, numProcs, totalDataSize, ownObjectStarts, ownObjectEnds);
+	splitData(myId, numProcs, totalObjectCount, ownObjectStarts, ownObjectEnds);
 	ownObjectStart = ownObjectStarts[myId];
 	ownObjectEnd = ownObjectEnds[myId];
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
@@ -170,17 +170,16 @@ int main(int argc, char *argv[])
 		}
 
 		upcxx::barrier();
-		if(myId == 0)
-			std::cout << "loop, writeCounter = " << writeCounter << std::endl;
 	}
 
 	if(myId == 0)
 		fclose(resultFile);
 
-	LOG("Starting deletes");
+	LOG("Starting Object deletes");
 	delete[] ownObjectStarts;
 	delete[] ownObjectEnds;
 
+	LOG("Starting Vector deletes");
 	delete[] xPositionVector;
 	delete[] yPositionVector;
 	delete[] zPositionVector;
