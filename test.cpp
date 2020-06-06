@@ -73,9 +73,6 @@ int main(int argc, char *argv[])
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
     ownDataSize = ownObjectCount * propertyCount;
 
-	LOGV("ownObjectStart", ownObjectStart);
-	LOGV("ownObjectEnd", ownObjectEnd);
-
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
 	double* zPositionVector = new double[totalObjectCount];	//m
@@ -149,8 +146,11 @@ int main(int argc, char *argv[])
 
 		LOG("Applying acceleration. Before:");
 		logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
-		logArray(myId, "yPos", xPositionVector, 0, totalObjectCount);
-		logArray(myId, "zPos", xPositionVector, 0, totalObjectCount);
+		logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
+		logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
+		logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
+		logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
+		logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
@@ -166,8 +166,11 @@ int main(int argc, char *argv[])
 		}
 		LOG("Applying acceleration. After:");
 		logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
-		logArray(myId, "yPos", xPositionVector, 0, totalObjectCount);
-		logArray(myId, "zPos", xPositionVector, 0, totalObjectCount);
+		logArray(myId, "yPos", yPositionVector, 0, totalObjectCount);
+		logArray(myId, "zPos", zPositionVector, 0, totalObjectCount);
+		logArray(myId, "xVel", xVelocityVector, 0, totalObjectCount);
+		logArray(myId, "yVel", yVelocityVector, 0, totalObjectCount);
+		logArray(myId, "zVel", zVelocityVector, 0, totalObjectCount);
 		
 		upcxx::barrier();
 
