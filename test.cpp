@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     double* massVector = new double[totalObjectCount];
     for(int i = 0; i < totalObjectCount; i++)
     {
-        massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6);
+        massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6).wait();
         if(i >= ownObjectStart && i < ownObjectEnd)
         {
             xVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
