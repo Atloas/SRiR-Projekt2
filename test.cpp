@@ -304,7 +304,7 @@ void readData(std::string filename, upcxx::global_ptr<double> dataVector)
 					line.erase(0, pos + delimiter.length());
 					datapos++;
 				}
-				upcxx::rput(atof(token.c_str()), dataVector + count*7 + 6).wait();
+				upcxx::rput(atof(line.c_str()), dataVector + count*7 + 6).wait();
 			}
 			++count;
 		}
