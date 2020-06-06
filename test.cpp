@@ -261,8 +261,8 @@ void readData(std::string filename, upcxx::global_ptr<double> dataVector)
     upcxx::rput(0.0, dataVector+8);
     upcxx::rput(0.0, dataVector+9);
     upcxx::rput(1.022e3, dataVector+10);
-    upcxx::rput(0.0, dataVector+11);
-    upcxx::rput(0.0, dataVector+12);
+    upcxx::rput(1.0, dataVector+11);
+    upcxx::rput(1.0, dataVector+12);
     upcxx::rput(7.347e22, dataVector+13);
 
     /*
