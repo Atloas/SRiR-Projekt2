@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	int totalObjectCount = 1000, ownObjectCount, totalDataSize, ownDataSize;
     const int propertyCount = 7;
 	double dt = 60;			//[s]
-	double Tmax = 121;//2.6e6;	//Miesiac
+	double Tmax = 120;//2.6e6;	//Miesiac
 	double G = 6.674e-11;
 
 	upcxx::init();
