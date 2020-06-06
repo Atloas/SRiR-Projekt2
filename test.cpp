@@ -186,6 +186,8 @@ int main(int argc, char *argv[])
 
 int getObjectCount(std::string filename)
 {
+	return 2;
+	/*
 	//Zliczenie ilosci wpisow w pliku danych
 	int count = 0;
 	std::string line;
@@ -197,6 +199,7 @@ int getObjectCount(std::string filename)
 		datafile.close();
 	}
 	return (count - 1);
+	*/
 }
 
 void splitData(int myId, int numProcs, int totalObjectCount, int* ownObjectStarts, int* ownObjectEnds)
