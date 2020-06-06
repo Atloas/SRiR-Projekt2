@@ -149,6 +149,10 @@ int main(int argc, char *argv[])
 			xPositionVector[i] += xVelocityVector[i] * dt;
 			yPositionVector[i] += yVelocityVector[i] * dt;
 			zPositionVector[i] += zVelocityVector[i] * dt;
+			LOGV("Updating PositionVector for body", i);
+			LOGV("x", xPositionVector[i]);
+			LOGV("y", yPositionVector[i]);
+			LOGV("z", zPositionVector[i]);
 			upcxx::rput(xPositionVector[i], dataVector + i*propertyCount);
 			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
 			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
@@ -161,15 +165,10 @@ int main(int argc, char *argv[])
 		{
 			if(i < ownObjectStart || i > ownObjectEnd)
 			{
-				LOGV("reading PositionVector for body", i);
-				LOG("Before:");
-				LOGV("x", xPositionVector[i]);
-				LOGV("y", yPositionVector[i]);
-				LOGV("z", zPositionVector[i]);
+				LOGV("Reading PositionVector for body", i);
 				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
 				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
 				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
-				LOG("After:");
 				LOGV("x", xPositionVector[i]);
 				LOGV("y", yPositionVector[i]);
 				LOGV("z", zPositionVector[i]);
