@@ -163,8 +163,6 @@ int main(int argc, char *argv[])
 		upcxx::barrier();
 	}
 
-	LOG("Loop finished");
-
 	if(myId == 0)
 		fclose(resultFile);
 
