@@ -74,9 +74,9 @@ int main(int argc, char *argv[])
         massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6);
         if(i >= ownObjectStart && i < ownObjectEnd)
         {
-            xVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 3);
-            yVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 4);
-            zVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 5);
+            xVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
+            yVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 4).wait();
+            zVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 5).wait();
         }
     }
 
@@ -101,9 +101,9 @@ int main(int argc, char *argv[])
 		{
 			if(t < 1.0 || (i < ownObjectStart && i >= ownObjectEnd))
 			{
-				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount);
-				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1);
-				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2);
+				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
+				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
+				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
 			}
 		}
 
@@ -147,9 +147,9 @@ int main(int argc, char *argv[])
 			xVelocityVector[i - ownObjectStart] += xAccelerationVector[i - ownObjectStart] * dt;
 			yVelocityVector[i - ownObjectStart] += yAccelerationVector[i - ownObjectStart] * dt;
 			zVelocityVector[i - ownObjectStart] += zAccelerationVector[i - ownObjectStart] * dt;
-			xPositionVector[i] += xVelVector[i] * dt;
-			yPositionVector[i] += yVelVector[i] * dt;
-			zPositionVector[i] += zVelVector[i] * dt;
+			xPositionVector[i] += xVelocityVector[i] * dt;
+			yPositionVector[i] += yVelocityVector[i] * dt;
+			zPositionVector[i] += zVelocityVector[i] * dt;
 			upcxx::rput(xPositionVector[i], dataVector + i*propertyCount);
 			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
 			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
