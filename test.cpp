@@ -23,6 +23,7 @@ void logArray(int myId, std::string name, double* array, int iStart, int iEnd)
 	{
 		std::cout << array[i] << ", ";
 	}
+	std::cout << std::endl;
 }
 
 int main(int argc, char *argv[])
