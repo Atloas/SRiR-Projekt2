@@ -162,9 +162,17 @@ int main(int argc, char *argv[])
 			if(i < ownObjectStart || i > ownObjectEnd)
 			{
 				LOGV("reading PositionVector for body", i);
+				LOG("Before:");
+				LOGV("x", xPositionVector[i]);
+				LOGV("y", yPositionVector[i]);
+				LOGV("z", zPositionVector[i]);
 				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
 				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
 				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
+				LOG("After:");
+				LOGV("x", xPositionVector[i]);
+				LOGV("y", yPositionVector[i]);
+				LOGV("z", zPositionVector[i]);
 			}
 		}
 
