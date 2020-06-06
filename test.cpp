@@ -77,13 +77,16 @@ int main(int argc, char *argv[])
     double* massVector = new double[totalObjectCount];
     for(int i = 0; i < totalObjectCount; i++)
     {
-        massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6).wait();
+		xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
+		yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
+		zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
         if(i >= ownObjectStart && i <= ownObjectEnd)
         {
             xVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
             yVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 4).wait();
             zVelocityVector[i - ownObjectStart] = upcxx::rget(dataVector + i*propertyCount + 5).wait();
         }
+		massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6).wait();
     }
 
 	double xPosDiff;
@@ -109,22 +112,6 @@ int main(int argc, char *argv[])
 	for (double t = 0; t < Tmax; t += dt, writeCounter++)
 	{
 		LOGV("t", t);
-		LOG("Updating PositionVectors");
-		for(int i = 0; i < totalObjectCount; i++)
-		{
-			if(t < 1.0 || (i < ownObjectStart && i > ownObjectEnd))
-			{
-				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
-				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
-				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
-			}
-		}
-
-        upcxx::barrier();
-
-		//Co 10 minut zapisanie danych do pliku
-		if (myId == 0)// && writeCounter % 10 == 0)
-			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
 
 		//Iteracja po cialach wlasnych danego procesu
 		LOG("Starting object iteration");
@@ -168,6 +155,23 @@ int main(int argc, char *argv[])
 			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
 			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
 		}
+		
+		upcxx::barrier();
+
+		LOG("Updating PositionVectors");
+		for(int i = 0; i < totalObjectCount; i++)
+		{
+			if(i < ownObjectStart || i > ownObjectEnd)
+			{
+				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
+				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
+				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
+			}
+		}
+
+		//Co 10 minut zapisanie danych do pliku
+		if (myId == 0)// && writeCounter % 10 == 0)
+			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
 
 		upcxx::barrier();
 	}
