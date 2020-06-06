@@ -8,70 +8,78 @@
 #include <iostream>
 #include <fstream>
 
-int getDataSize(std::string filename);
-void readData(std::string filename, double* xPosVector, double* yPosVector, double* zPosVector, double* xVelVector, double* yVelVector, double* zVelVector, double* massVector);
-void splitData(int myId, int numProcs, int totalDataSize, int* partialDataStarts, int* partialDataEnds);
-void broadcastInitialData(int totalDataSize, double* xPosVector, double* yPosVector, double* zPosVector, double* xVelVector, double* yVelVector, double* zVelVector, double* massVector);
-void broadcastData(int myId, int numProcs, double* xPosVector, double* yPosVector, double* zPosVector, int* partialDataStarts, int* partialDataEnds);
-void saveData(FILE* resultFile, double* xPosVector, double* yPosVector, double* zPosVector, int totalDataSize);
+int getObjectCount(std::string filename);
+void readData(std::string filename, upcxx::global_ptr<double> dataVector);
+void splitData(int myId, int numProcs, int totalDataSize, int* ownObjectStarts, int* ownObjectEnds);
+void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount);
 
 int main(int argc, char *argv[])
 {
 	int myId = 0, numProcs = 2;
 	std::string filename = "resultdata.txt";
 	FILE* resultFile;
-	int totalDataSize = 1000, ownDataSize;
+	int totalObjectCount = 1000, ownObjectCount, totalDataSize, ownDataSize;
+    const int propertyCount = 7;
 	double dt = 60;			//[s]
-	double Tmax = 120;//2.6e6;	//Miesiac
+	double Tmax = 2.6e6;	//Miesiac
 	double G = 6.674e-11;
-
-	// MPI_Init(&argc, &argv);
-	// MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-	// MPI_Comm_rank(MPI_COMM_WORLD, &myId);
 
 	upcxx::init();
 	myId = upcxx::rank_me();
 	numProcs = upcxx::rank_n();
-	upcxx::global_ptr<int> totalDataSizePtr = nullptr;
 
-	int* partialDataStarts = new int[numProcs];
-	int* partialDataEnds = new int[numProcs];
-	int ownDataStart, ownDataEnd;
+	upcxx::global_ptr<int> totalObjectCountPtr = nullptr;
 
-	if (myId == 0)
-	{
-		totalDataSize = getDataSize(filename);
-		totalDataSizePtr = upcxx::new_(totalDataSize);
-	}
-	totalDataSizePtr = upcxx::broadcast(totalDataSizePtr, 0).wait();
-	totalDataSize = upcxx::rget(totalDataSizePtr).wait();
-
-	// MPI_Bcast(&totalDataSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-	double* xPosVector = new double[totalDataSize];  //[m]
-	double* yPosVector = new double[totalDataSize];  //[m]
-	double* zPosVector = new double[totalDataSize];  //[m]
-	double* xVelVector = new double[totalDataSize];  //[m/s]
-	double* yVelVector = new double[totalDataSize];  //[m/s]
-	double* zVelVector = new double[totalDataSize];  //[m/s]
-	double* massVector = new double[totalDataSize];  //[kg]
+	int* ownObjectStarts = new int[numProcs];
+	int* ownObjectEnds = new int[numProcs];
+	int ownObjectStart, ownObjectEnd;
 
 	if (myId == 0)
 	{
-		readData(filename, xPosVector, yPosVector, zPosVector, xVelVector, yVelVector, zVelVector, massVector);
+		totalObjectCount = getObjectCount(filename);
+		totalObjectCountPtr = upcxx::new_<int>();
+		upcxx::rput(totalObjectCount, totalObjectCountPtr);
 	}
+	totalObjectCountPtr = upcxx::broadcast(totalObjectCountPtr, 0).wait();
+	totalObjectCount = upcxx::rget(totalObjectCountPtr).wait();
+    totalDataSize = totalObjectCount * propertyCount;
+
+    upcxx::global_ptr<double> dataVector = nullptr;
+
+	if (myId == 0)
+	{
+        dataVector = upcxx::new_array<double>(totalDataSize);
+		readData(filename, dataVector);
+	}
+    dataVector = upcxx::broadcast(dataVector, 0).wait();
 
 	//Przeslanie danych poczatkowych oraz ich podzial przez indeksy.
-	broadcastInitialData(totalDataSize, xPosVector, yPosVector, zPosVector, xVelVector, yVelVector, zVelVector, massVector);
-	splitData(myId, numProcs, totalDataSize, partialDataStarts, partialDataEnds);
-	ownDataStart = partialDataStarts[myId];
-	ownDataEnd = partialDataEnds[myId];
-	ownDataSize = ownDataEnd - ownDataStart + 1;
+	splitData(myId, numProcs, totalObjectCount, ownObjectStarts, ownObjectEnds);
+	ownObjectStart = ownObjectStarts[myId];
+	ownObjectEnd = ownObjectEnds[myId];
+	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
+    ownDataSize = ownObjectCount * propertyCount;
 
-	//Wektory przyspieszenia wlasnych dla danego procesu cial. Nie przechowuja cial przynaleznych do innych procesow.
-	double* xAccelerationVector = new double[ownDataSize];  //m/s2
-	double* yAccelerationVector = new double[ownDataSize];	//m/s2
-	double* zAccelerationVector = new double[ownDataSize];	//m/s2
+    double* xPositionVector = new double[totalObjectCount];   //m
+    double* yPositionVector = new double[totalObjectCount];	//m
+	double* zPositionVector = new double[totalObjectCount];	//m
+    double* xVelocityVector = new double[totalObjectCount];   //m/s
+    double* yVelocityVector = new double[totalObjectCount];	//m/s
+	double* zVelocityVector = new double[totalObjectCount];	//m/s
+    double* xAccelerationVector = new double[totalObjectCount];  //m/s2
+	double* yAccelerationVector = new double[totalObjectCount];	//m/s2
+	double* zAccelerationVector = new double[totalObjectCount];	//m/s2
+    double* massVector = new double[totalObjectCount];
+    for(int i = 0; i < totalObjectCount; i++)
+    {
+		xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
+		yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
+		zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
+		xVelocityVector[i] = upcxx::rget(dataVector + i*propertyCount + 3).wait();
+		yVelocityVector[i] = upcxx::rget(dataVector + i*propertyCount + 4).wait();
+		zVelocityVector[i] = upcxx::rget(dataVector + i*propertyCount + 5).wait();
+		massVector[i] = upcxx::rget(dataVector + i*propertyCount + 6).wait();
+    }
 
 	double xPosDiff;
 	double yPosDiff;
@@ -81,87 +89,110 @@ int main(int argc, char *argv[])
 	double angleH;
 	double angleV;
 
-	resultFile = fopen(filename.c_str(), "w");
-	fprintf(resultFile, "id;x;y;z\n");
+	if(myId == 0)
+	{
+		resultFile = fopen(filename.c_str(), "w");
+		fprintf(resultFile, "id;x;y;z\n");
+	}
+
+    upcxx::barrier();
 
 	int writeCounter = 0;
 	//Petla symulacji
 	for (double t = 0; t < Tmax; t += dt, writeCounter++)
 	{
 		//Iteracja po cialach wlasnych danego procesu
-		for (int i = ownDataStart; i < ownDataEnd + 1; i++)
+		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
-			xAccelerationVector[i - ownDataStart] = 0;
-			yAccelerationVector[i - ownDataStart] = 0;
-			zAccelerationVector[i - ownDataStart] = 0;
+			xAccelerationVector[i] = 0;
+			yAccelerationVector[i] = 0;
+			zAccelerationVector[i] = 0;
 
 			//Iteracja po wszystkich cialach symulacji
-			for (int j = 0; j < totalDataSize; j++)
+			for (int j = 0; j < totalObjectCount; j++)
 			{
 				if (i == j)
 					continue;
 
 				//Obliczenie przyspieszenia jakie cialo j wywiera na cialo wlasne i
-				xPosDiff = xPosVector[i] - xPosVector[j];
-				yPosDiff = yPosVector[i] - yPosVector[j];
-				zPosDiff = zPosVector[i] - zPosVector[j];
+				xPosDiff = xPositionVector[i] - xPositionVector[j];
+				yPosDiff = yPositionVector[i] - yPositionVector[j];
+				zPosDiff = zPositionVector[i] - zPositionVector[j];
 				r2 = pow(xPosDiff, 2) + pow(yPosDiff, 2) + pow(zPosDiff, 2);
-				magnitude = G*massVector[i]*massVector[j] / r2;
+				magnitude = G*massVector[j] / r2;
 				angleH = atan2(yPosDiff, sqrt(pow(zPosDiff, 2) + pow(xPosDiff, 2)));
 				angleV = atan2(zPosDiff, xPosDiff);
-				xAccelerationVector[i - ownDataStart] += -magnitude*cos(angleH)*cos(angleV) / massVector[i];
-				yAccelerationVector[i - ownDataStart] += -magnitude*sin(angleH) / massVector[i];
-				zAccelerationVector[i - ownDataStart] += -magnitude*cos(angleH)*sin(angleV) / massVector[i];
+				xAccelerationVector[i] += -magnitude*cos(angleH)*cos(angleV);
+				yAccelerationVector[i] += -magnitude*sin(angleH);
+				zAccelerationVector[i] += -magnitude*cos(angleH)*sin(angleV);
 			}
 		}
 
 		//Zastosowanie obliczonych zmian predkosci i polozenia
-		for (int i = ownDataStart; i < ownDataEnd + 1; i++)
+		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
-			xVelVector[i] += xAccelerationVector[i - ownDataStart] * dt;
-			yVelVector[i] += yAccelerationVector[i - ownDataStart] * dt;
-			zVelVector[i] += zAccelerationVector[i - ownDataStart] * dt;
-			xPosVector[i] += xVelVector[i] * dt;
-			yPosVector[i] += yVelVector[i] * dt;
-			zPosVector[i] += zVelVector[i] * dt;
+			xVelocityVector[i] += xAccelerationVector[i] * dt;
+			yVelocityVector[i] += yAccelerationVector[i] * dt;
+			zVelocityVector[i] += zAccelerationVector[i] * dt;
+			xPositionVector[i] += xVelocityVector[i] * dt;
+			yPositionVector[i] += yVelocityVector[i] * dt;
+			zPositionVector[i] += zVelocityVector[i] * dt;
+			upcxx::rput(xPositionVector[i], dataVector + i*propertyCount);
+			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
+			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
 		}
-
-		broadcastData(myId, numProcs, xPosVector, yPosVector, zPosVector, partialDataStarts, partialDataEnds);
+		
 		upcxx::barrier();
 
-		//Co 10 minut zapisanie danych do pliku
-		if (myId == 0 && writeCounter % 10 == 0) {
-			saveData(resultFile, xPosVector, yPosVector, zPosVector, totalDataSize);
+		for(int i = 0; i < totalObjectCount; i++)
+		{
+			if(i < ownObjectStart || i > ownObjectEnd)
+			{
+				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
+				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
+				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
+			}
 		}
-		writeCounter++;
+
+		//Co 10 minut zapisanie danych do pliku
+		if (myId == 0 && writeCounter % 10 == 0)
+			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
+		if (myId == 0 && writeCounter % 100 == 0)
+			std::cout << t << std::endl;
+
+		upcxx::barrier();
 	}
 
-	fclose(resultFile);
+	if(myId == 0)
+		fclose(resultFile);
 
-	delete[] xPosVector;
-	delete[] yPosVector;
-	delete[] zPosVector;
-	delete[] xVelVector;
-	delete[] yVelVector;
-	delete[] zVelVector;
+	delete[] ownObjectStarts;
+	delete[] ownObjectEnds;
+
+	delete[] xPositionVector;
+	delete[] yPositionVector;
+	delete[] zPositionVector;
+	delete[] xVelocityVector;
+	delete[] yVelocityVector;
+	delete[] zVelocityVector;
 	delete[] massVector;
-	delete[] partialDataStarts;
-	delete[] partialDataEnds;
-
 	delete[] xAccelerationVector;
 	delete[] yAccelerationVector;
 	delete[] zAccelerationVector;
 
-	// MPI_Finalize();
-
-	upcxx::delete_(totalDataSizePtr);
+	if(myId == 0)
+	{
+		upcxx::delete_array(dataVector);
+		upcxx::delete_(totalObjectCountPtr);
+	}
 	upcxx::finalize();
 
 	return 0;
 }
 
-int getDataSize(std::string filename)
+int getObjectCount(std::string filename)
 {
+	// return 2;
 	//Zliczenie ilosci wpisow w pliku danych
 	int count = 0;
 	std::string line;
@@ -175,29 +206,29 @@ int getDataSize(std::string filename)
 	return (count - 1);
 }
 
-void splitData(int myId, int numProcs, int totalDataSize, int* partialDataStarts, int* partialDataEnds)
+void splitData(int myId, int numProcs, int totalObjectCount, int* ownObjectStarts, int* ownObjectEnds)
 {
 	//Podzial danych miedzy procesy poprzez nadanie im pewnych zakresow indeksow.
-	int baseCount = totalDataSize / numProcs;
-	int leftover = totalDataSize%numProcs;
+	int baseCount = totalObjectCount / numProcs;
+	int leftover = totalObjectCount % numProcs;
 
-	partialDataStarts[0] = 0;
+	ownObjectStarts[0] = 0;
 	for (int i = 1; i < numProcs; i++)
 	{
-		partialDataStarts[i] = partialDataStarts[i - 1] + baseCount;
+		ownObjectStarts[i] = ownObjectStarts[i - 1] + baseCount;
 		if (leftover > 0)
 		{
-			partialDataStarts[i] += 1;
+			ownObjectStarts[i] += 1;
 			leftover--;
 		}
-		partialDataEnds[i - 1] = partialDataStarts[i] - 1;
+		ownObjectEnds[i - 1] = ownObjectStarts[i] - 1;
 	}
-	partialDataEnds[numProcs - 1] = totalDataSize - 1;
+	ownObjectEnds[numProcs - 1] = totalObjectCount - 1;
 }
 
-void readData(std::string filename, double* xPosVector, double* yPosVector, double* zPosVector, double* xVelVector, double* yVelVector, double* zVelVector, double* massVector)
+void readData(std::string filename, upcxx::global_ptr<double> dataVector)
 {
-	//Wczytanie danych cial niebieskich z pliku
+    //Wczytanie danych cial niebieskich z pliku
 	std::string line;
 	std::string delimiter = ";";
 	int count = -1;
@@ -211,28 +242,28 @@ void readData(std::string filename, double* xPosVector, double* yPosVector, doub
 					std::string token = line.substr(0, pos);
 					switch (datapos) {
 					case 1:
-						xPosVector[count] = atof(token.c_str());
+						upcxx::rput(atof(token.c_str()), dataVector + count*7).wait();
 						break;
 					case 2:
-						yPosVector[count] = atof(token.c_str());
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 1).wait();
 						break;
 					case 3:
-						zPosVector[count] = atof(token.c_str());
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 2).wait();
 						break;
 					case 4:
-						xVelVector[count] = atof(token.c_str());
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 3).wait();
 						break;
 					case 5:
-						yVelVector[count] = atof(token.c_str());
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 4).wait();
 						break;
 					case 6:
-						zVelVector[count] = atof(token.c_str());
+						upcxx::rput(atof(token.c_str()), dataVector + count*7 + 5).wait();
 						break;
 					}
 					line.erase(0, pos + delimiter.length());
 					datapos++;
 				}
-				massVector[count] = atof(line.c_str());
+				upcxx::rput(atof(line.c_str()), dataVector + count*7 + 6).wait();
 			}
 			++count;
 		}
@@ -240,33 +271,10 @@ void readData(std::string filename, double* xPosVector, double* yPosVector, doub
 	}
 }
 
-void broadcastInitialData(int totalDataSize, double* xPosVector, double* yPosVector, double* zPosVector, double* xVelVector, double* yVelVector, double* zVelVector, double* massVector)
+void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount)
 {
-	// MPI_Bcast(xPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast(yPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast(zPosVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast(xVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast(yVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast(zVelVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	// MPI_Bcast(massVector, totalDataSize, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-}
-
-void broadcastData(int myId, int numProcs, double* xPosVector, double* yPosVector, double* zPosVector, int* partialDataStarts, int* partialDataEnds)
-{
-	// int partialDataSize;
-	// for (int i = 0; i < numProcs; i++)
-	// {
-	// 	partialDataSize = partialDataEnds[i] - partialDataStarts[i] + 1;
-	// 	MPI_Bcast(xPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
-	// 	MPI_Bcast(yPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
-	// 	MPI_Bcast(zPosVector + partialDataStarts[i], partialDataSize, MPI_DOUBLE, i, MPI_COMM_WORLD);
-	// }
-}
-
-void saveData(FILE* resultFile, double* xPosVector, double* yPosVector, double* zPosVector, int totalDataSize)
-{
-	for (int i = 0; i < totalDataSize; i++)
+	for (int i = 0; i < totalObjectCount; i++)
 	{
-		fprintf(resultFile, "%d;%f;%f;%f\n", i, xPosVector[i], yPosVector[i], zPosVector[i]);
+		fprintf(resultFile, "%d;%f;%f;%f\n", i, xPositionVector[i], yPositionVector[i], zPositionVector[i]);
 	}
 }

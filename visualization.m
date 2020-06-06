@@ -12,8 +12,8 @@ fullData = reshape(fullData, 4, 36, datapointCount);
 myVideo = VideoWriter('visualization');
 myVideo.FrameRate = 30;
 open(myVideo)
-observedBody = 10;
-windowSize = 3e9;
+observedBody = 15;
+windowSize = 4e9;
 
 x0 = 10;
 y0 = 10;
@@ -25,7 +25,7 @@ planets = [2 3 4 6 10 15 24 30];
 moonsAndAsteroids = [5 7 8 9 11 12 13 14 16 17 18 19 20 21 22 23 25 26 27 28 29 31 32 33 34];
 probes = [35 36];
 
-for i = 1:18:datapointCount
+for i = 1:9:datapointCount
     scatter3(fullData(2, probes, i), fullData(3, probes, i), fullData(4, probes, i), 'filled', 'k');
     hold on;
     scatter3(fullData(2, moonsAndAsteroids, i), fullData(3, moonsAndAsteroids, i), fullData(4, moonsAndAsteroids, i), 'filled', 'b');
@@ -37,7 +37,7 @@ for i = 1:18:datapointCount
     ylim([fullData(3, observedBody, i) - windowSize, fullData(3, observedBody, i) + windowSize]);
     zlim([fullData(4, observedBody, i) - windowSize, fullData(4, observedBody, i) + windowSize]);
     view([0 0 1]);
-    title('Uk³ad planetarny Jowisza');
+    title('Uk³ad planetarny Saturna');
     xlabel('X [m]');
     ylabel('Y [m]');
     
