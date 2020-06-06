@@ -9,7 +9,7 @@
 #include <fstream>
 
 int getObjectCount(std::string filename);
-void readData(std::string filename, double* dataVector);
+void readData(std::string filename, upcxx::global_ptr<double> dataVector);
 void splitData(int myId, int numProcs, int totalDataSize, int* ownObjectStarts, int* ownObjectEnds);
 void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount);
 
@@ -36,7 +36,8 @@ int main(int argc, char *argv[])
 	if (myId == 0)
 	{
 		totalObjectCount = getObjectCount(filename);
-		totalObjectCountPtr = upcxx::new_(totalObjectCount);
+		totalObjectCountPtr = upcxx::new_();
+		upcxx::rput(totalObjectCount, totalObjectCountPtr);
 	}
 	totalObjectCountPtr = upcxx::broadcast(totalObjectCountPtr, 0).wait();
 	totalObjectCount = upcxx::rget(totalObjectCountPtr).wait();
@@ -215,7 +216,7 @@ void splitData(int myId, int numProcs, int totalObjectCount, int* ownObjectStart
 	ownObjectEnds[numProcs - 1] = totalObjectCount - 1;
 }
 
-void readData(std::string filename, double* dataVector)
+void readData(std::string filename, upcxx::global_ptr<double> dataVector)
 {
     upcxx::rput(0.0, dataVector);
     upcxx::rput(0.0, dataVector+1);
