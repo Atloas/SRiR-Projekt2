@@ -63,8 +63,6 @@ int main(int argc, char *argv[])
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
     ownDataSize = ownObjectCount * propertyCount;
 
-	LOGV("ownObjectCount", ownObjectCount);
-
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
 	double* zPositionVector = new double[totalObjectCount];	//m
@@ -163,6 +161,7 @@ int main(int argc, char *argv[])
 		{
 			if(i < ownObjectStart || i > ownObjectEnd)
 			{
+				LOGV("reading PositionVector for body", i);
 				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
 				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
 				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
@@ -179,11 +178,9 @@ int main(int argc, char *argv[])
 	if(myId == 0)
 		fclose(resultFile);
 
-	LOG("Starting Object deletes");
 	delete[] ownObjectStarts;
 	delete[] ownObjectEnds;
 
-	LOG("Starting Vector deletes");
 	delete[] xPositionVector;
 	delete[] yPositionVector;
 	delete[] zPositionVector;
