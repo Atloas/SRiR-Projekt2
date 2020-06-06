@@ -174,8 +174,11 @@ int main(int argc, char *argv[])
 	delete[] yAccelerationVector;
 	delete[] zAccelerationVector;
 
-	upcxx::delete_array(dataVector);
-	upcxx::delete_(totalObjectCountPtr);
+	if(myId == 0)
+	{
+		upcxx::delete_array(dataVector);
+		upcxx::delete_(totalObjectCountPtr);
+	}
 	upcxx::finalize();
 
 	return 0;
