@@ -88,8 +88,11 @@ int main(int argc, char *argv[])
 	double angleH;
 	double angleV;
 
-	resultFile = fopen(filename.c_str(), "w");
-	fprintf(resultFile, "id;x;y;z\n");
+	if(myId == 0)
+	{
+		resultFile = fopen(filename.c_str(), "w");
+		fprintf(resultFile, "id;x;y;z\n");
+	}
 
     upcxx::barrier();
 
@@ -110,9 +113,8 @@ int main(int argc, char *argv[])
         upcxx::barrier();
 
 		//Co 10 minut zapisanie danych do pliku
-		if (myId == 0 && writeCounter % 10 == 0) {
+		if (myId == 0)// && writeCounter % 10 == 0)
 			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
-		}
 
 		//Iteracja po cialach wlasnych danego procesu
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
@@ -160,8 +162,9 @@ int main(int argc, char *argv[])
 			std::cout << "loop, writeCounter = " << writeCounter << std::endl;
 	}
 
-	fclose(resultFile);
-
+	if(myId == 0)
+		fclose(resultFile);
+		
 	delete[] ownObjectStarts;
 	delete[] ownObjectEnds;
 
