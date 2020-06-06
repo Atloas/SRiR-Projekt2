@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 
 		//Co 10 minut zapisanie danych do pliku
 		if (myId == 0 && writeCounter % 10 == 0) {
-			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalDataSize);
+			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
 		}
 
 		//Iteracja po cialach wlasnych danego procesu
