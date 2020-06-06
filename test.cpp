@@ -16,6 +16,15 @@ void readData(std::string filename, upcxx::global_ptr<double> dataVector);
 void splitData(int myId, int numProcs, int totalDataSize, int* ownObjectStarts, int* ownObjectEnds);
 void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount);
 
+void logArray(int myId, std::string name, double* array, int iStart, int iEnd)
+{
+	std::cout << myId << ": " << name << ": ";
+	for(int i = iStart; i < iEnd; i++)
+	{
+		std::cout << array[i] << ", ";
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	int myId = 0, numProcs = 2;
@@ -63,6 +72,9 @@ int main(int argc, char *argv[])
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
     ownDataSize = ownObjectCount * propertyCount;
 
+	LOGV("ownObjectStart", ownObjectStart);
+	LOGV("ownObjectEnd", ownObjectEnd);
+
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
 	double* zPositionVector = new double[totalObjectCount];	//m
@@ -103,16 +115,11 @@ int main(int argc, char *argv[])
 
     upcxx::barrier();
 
-	LOG("Starting loop");
-
 	int writeCounter = 0;
 	//Petla symulacji
 	for (double t = 0; t < Tmax; t += dt, writeCounter++)
 	{
-		LOGV("t", t);
-
 		//Iteracja po cialach wlasnych danego procesu
-		LOG("Starting object iteration");
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
 			xAccelerationVector[i - ownObjectStart] = 0;
@@ -139,7 +146,10 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		LOG("Applying acceleration");
+		LOG("Applying acceleration. Before:");
+		logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
+		logArray(myId, "yPos", xPositionVector, 0, totalObjectCount);
+		logArray(myId, "zPos", xPositionVector, 0, totalObjectCount);
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
@@ -149,29 +159,24 @@ int main(int argc, char *argv[])
 			xPositionVector[i] += xVelocityVector[i] * dt;
 			yPositionVector[i] += yVelocityVector[i] * dt;
 			zPositionVector[i] += zVelocityVector[i] * dt;
-			LOGV("Updating PositionVector for body", i);
-			LOGV("x", xPositionVector[i]);
-			LOGV("y", yPositionVector[i]);
-			LOGV("z", zPositionVector[i]);
 			upcxx::rput(xPositionVector[i], dataVector + i*propertyCount);
 			upcxx::rput(yPositionVector[i], dataVector + i*propertyCount + 1);
 			upcxx::rput(zPositionVector[i], dataVector + i*propertyCount + 2);
 		}
+		LOG("Applying acceleration. After:");
+		logArray(myId, "xPos", xPositionVector, 0, totalObjectCount);
+		logArray(myId, "yPos", xPositionVector, 0, totalObjectCount);
+		logArray(myId, "zPos", xPositionVector, 0, totalObjectCount);
 		
 		upcxx::barrier();
 
-		LOG("Updating PositionVectors");
 		for(int i = 0; i < totalObjectCount; i++)
 		{
 			if(i < ownObjectStart || i > ownObjectEnd)
 			{
-				LOGV("Reading PositionVector for body", i);
 				xPositionVector[i] = upcxx::rget(dataVector + i*propertyCount).wait();
 				yPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 1).wait();
 				zPositionVector[i] = upcxx::rget(dataVector + i*propertyCount + 2).wait();
-				LOGV("x", xPositionVector[i]);
-				LOGV("y", yPositionVector[i]);
-				LOGV("z", zPositionVector[i]);
 			}
 		}
 
