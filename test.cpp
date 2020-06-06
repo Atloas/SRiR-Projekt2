@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 		}
 
 		//Co 10 minut zapisanie danych do pliku
-		if (myId == 0)// && writeCounter % 10 == 0)
+		if (myId == 0 && writeCounter % 10 == 0)
 			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
 
 		upcxx::barrier();
