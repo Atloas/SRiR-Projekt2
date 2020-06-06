@@ -8,6 +8,9 @@
 #include <iostream>
 #include <fstream>
 
+#define LOG(message) std::cout << myId << ": " << message << std::endl;
+#define LOGV(name, value) std::cout << myId << ": " << name << " = " << value << std::endl;
+
 int getObjectCount(std::string filename);
 void readData(std::string filename, upcxx::global_ptr<double> dataVector);
 void splitData(int myId, int numProcs, int totalDataSize, int* ownObjectStarts, int* ownObjectEnds);
@@ -27,6 +30,7 @@ int main(int argc, char *argv[])
 	upcxx::init();
 	myId = upcxx::rank_me();
 	numProcs = upcxx::rank_n();
+
 	upcxx::global_ptr<int> totalObjectCountPtr = nullptr;
 
 	int* ownObjectStarts = new int[numProcs];
@@ -58,6 +62,8 @@ int main(int argc, char *argv[])
 	ownObjectEnd = ownObjectEnds[myId];
 	ownObjectCount = ownObjectEnd - ownObjectStart + 1;
     ownDataSize = ownObjectCount * propertyCount;
+
+	LOGV("ownObjectCount", ownObjectCount);
 
     double* xPositionVector = new double[totalObjectCount];   //m
     double* yPositionVector = new double[totalObjectCount];	//m
@@ -96,10 +102,14 @@ int main(int argc, char *argv[])
 
     upcxx::barrier();
 
+	LOG("Starting loop");
+
 	int writeCounter = 0;
 	//Petla symulacji
 	for (double t = 0; t < Tmax; t += dt, writeCounter++)
 	{
+		LOGV("t", t);
+		LOG("Updating PositionVectors");
 		for(int i = 0; i < totalObjectCount; i++)
 		{
 			if(t < 1.0 || (i < ownObjectStart && i > ownObjectEnd))
@@ -117,6 +127,7 @@ int main(int argc, char *argv[])
 			saveData(resultFile, xPositionVector, yPositionVector, zPositionVector, totalObjectCount);
 
 		//Iteracja po cialach wlasnych danego procesu
+		LOG("Starting object iteration");
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
 			xAccelerationVector[i - ownObjectStart] = 0;
@@ -143,6 +154,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		LOG("Applying acceleration");
 		//Zastosowanie obliczonych zmian predkosci i polozenia
 		for (int i = ownObjectStart; i < ownObjectEnd + 1; i++)
 		{
@@ -164,7 +176,8 @@ int main(int argc, char *argv[])
 
 	if(myId == 0)
 		fclose(resultFile);
-		
+
+	LOG("Starting deletes");
 	delete[] ownObjectStarts;
 	delete[] ownObjectEnds;
 
