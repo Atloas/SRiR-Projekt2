@@ -1,9 +1,6 @@
 NN=2
 
-all: setup nbody run clean
-
-setup: 
-	source /opt/nfs/config/source_upcxx.sh
+all: nbody run clean
 
 nbody: nbody.cpp
 	UPCXX_GASNET_CONDUIT=udp upcxx -O nbody.cpp -o nbody
