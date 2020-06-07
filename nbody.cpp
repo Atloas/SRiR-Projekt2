@@ -14,7 +14,7 @@ int getObjectCount(std::string filename);
 void readData(std::string filename, upcxx::global_ptr<double> dataVector);
 void splitData(int myId, int numProcs, int totalDataSize, int* ownObjectStarts, int* ownObjectEnds);
 void initializeVectors(int totalObjectCount, upcxx::global_ptr<double> dataVector, double* xPositionVector, double* yPositionVector, double* zPositionVector, double* xVelocityVector, double* yVelocityVector, double* zVelocityVector, double* massVector);
-void updateDataVector(int i, upcxx::global_ptr<double> dataVector, double* xPositionVector, double* yPositionVector, double* zPositionVector)
+void updateDataVector(int i, upcxx::global_ptr<double> dataVector, double* xPositionVector, double* yPositionVector, double* zPositionVector);
 void updatePositionVectors(int ownObjectStart, int ownObjectEnd, int totalObjectCount, upcxx::global_ptr<double> dataVector, double* xPositionVector, double* yPositionVector, double* zPositionVector);
 void saveData(FILE* resultFile, double* xPositionVector, double* yPositionVector, double* zPositionVector, int totalObjectCount);
 
