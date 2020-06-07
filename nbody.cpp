@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
     double* massVector = new double[totalObjectCount];         //kg
     
     //Inicjalizacja wektorow danych z wektoru globalnego
-    initializeVectors(totalObjectCount, dataVector, xPositionVector, yPositionVector, zVelocityVector, xVelocityVector, yVelocityVector, zPositionVector, massVector);
+    initializeVectors(totalObjectCount, dataVector, xPositionVector, yPositionVector, zPositionVector, xVelocityVector, yVelocityVector, zVelocityVector, massVector);
 
     //Przygotowanie pliku wyjsciowego do zapisu
     if(myId == 0)

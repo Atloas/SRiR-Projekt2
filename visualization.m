@@ -1,4 +1,5 @@
 clc;
+clf;
 clear;
 
 dataString = fileread('resultdata.txt');
