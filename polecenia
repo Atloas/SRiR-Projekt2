@@ -1,7 +1,7 @@
 source /opt/nfs/config/source_upcxx.sh
 
-UPCXX_GASNET_CONDUIT=udp upcxx -O test.cpp -o test
+UPCXX_GASNET_CONDUIT=udp upcxx -O nbody.cpp -o nbody
 
 /opt/nfs/config/station_name_list.sh 201 216 > nodes
 
-upcxx-run -n 4 $(upcxx-nodes nodes) test 
+upcxx-run -n 2 $(upcxx-nodes nodes) nbody
